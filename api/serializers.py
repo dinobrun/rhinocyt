@@ -13,7 +13,8 @@ from api.models import (
     City,
     CellExtraction,
     Cell,
-    Slide
+    Slide,
+    Anamnesis
 )
 
 
@@ -22,19 +23,19 @@ class CellCategorySerializer(ModelSerializer):
         model = CellCategory
         fields = '__all__'
 
-        
+
 class CitySerializer(ModelSerializer):
     class Meta:
         model = City
         fields = '__all__'
 
 
-class UserSerializer(ModelSerializer):    
+class UserSerializer(ModelSerializer):
     class Meta:
         model = User
         fields = ('username', 'email', 'password', 'first_name', 'last_name')
         extra_kwargs = {'password': {'write_only': True}}
-    
+
     def validate_password(self, value):
         return make_password(value)
 
@@ -52,12 +53,12 @@ class DoctorSerializer(ModelSerializer):
     email = serializers.CharField(source='user.email')
     password = serializers.CharField(source='user.password', write_only=True)
     patients = PatientSerializer(many=True, read_only=True)
-    
+
     class Meta:
         model = Doctor
         fields = ('id', 'last_name', 'first_name', 'username', 'email', 'password', 'patients')
         depth = 1
-        
+
     def create(self, validated_data):
         user_data = validated_data['user']
         user = User.objects.create_user(last_name=user_data['last_name'],
@@ -69,7 +70,7 @@ class DoctorSerializer(ModelSerializer):
         return Doctor.objects.create(user=user)
 
 
-class CellSerializer(ModelSerializer):    
+class CellSerializer(ModelSerializer):
     class Meta:
         model = Cell
         fields = '__all__'
@@ -79,7 +80,7 @@ class SlideSerializer(ModelSerializer):
     cells = CellSerializer(many=True, read_only=True)
     cell_extraction_id = serializers.SerializerMethodField()
     patient_id = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Slide
         fields = ['id', 'image', 'cell_extraction', 'cell_extraction_id', 'patient', 'patient_id', 'cells']
@@ -90,14 +91,19 @@ class SlideSerializer(ModelSerializer):
 
     def get_cell_extraction_id(self, obj):
         return obj.cell_extraction.id
-    
+
     def get_patient_id(self, obj):
         return obj.patient.id
 
 
 class CellExtractionSerializer(ModelSerializer):
     slides = SlideSerializer(many=True, read_only=True)
-    
+
     class Meta:
         model = CellExtraction
+        fields = '__all__'
+
+class AnamnesisSerializer(ModelSerializer):
+    class Meta:
+        model = Anamnesis
         fields = '__all__'

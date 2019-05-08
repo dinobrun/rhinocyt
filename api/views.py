@@ -15,7 +15,8 @@ from api.models import (
     City,
     CellExtraction,
     Cell,
-    Slide
+    Slide,
+    Anamnesis
 )
 
 from api.serializers import (
@@ -25,7 +26,8 @@ from api.serializers import (
     CitySerializer,
     CellExtractionSerializer,
     CellSerializer,
-    SlideSerializer
+    SlideSerializer,
+    AnamnesisSerializer
 )
 from api.permissions import IsPatientOwner
 from django.http.request import QueryDict
@@ -40,7 +42,7 @@ class UserViewSet(ModelViewSet):
 class DoctorViewSet(ModelViewSet):
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
-    
+
     def list(self, request, *args, **kwargs):
         print(request.GET)
         token = request.GET.get('token')
@@ -51,9 +53,9 @@ class DoctorViewSet(ModelViewSet):
         else:
             queryset = self.get_queryset()
             serializer = self.get_serializer(queryset, many=True)
-        
+
         return Response(serializer.data)
-    
+
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.user.username = request.data.get('username')
@@ -61,12 +63,12 @@ class DoctorViewSet(ModelViewSet):
         instance.user.first_name = request.data.get('first_name')
         instance.user.last_name = request.data.get('last_name')
         instance.save()
-        
+
         serializer = self.get_serializer(instance)
         serializer.is_valid(raise_exception=True)
-        
+
         self.perform_update(serializer)
-        
+
         return Response(serializer)
 
 
@@ -74,18 +76,18 @@ class DoctorViewSet(ModelViewSet):
 class PatientViewSet(ModelViewSet):
     queryset = Patient.objects.all()
     serializer_class = PatientSerializer
-    
+
     def get_queryset(self):
         print('get_queryset()')
         user = self.request.user
-        
+
         request = Doctor.objects.none();
         if user.is_staff:
             request = Patient.objects.all()
         else:
             doctor = Doctor.objects.get(user=user)
             request = doctor.getPatients()
-            
+
         return request
 
 
@@ -104,10 +106,10 @@ class CityViewSet(ModelViewSet):
 class CellExtractionViewSet(ModelViewSet):
     queryset = CellExtraction.objects.all()
     serializer_class = CellExtractionSerializer
-    
+
     def get_queryset(self):
         user = self.request.user
-        
+
         queryset = CellExtraction.objects.none()
         if user.is_staff:
             queryset = CellExtraction.objects.all()
@@ -118,45 +120,45 @@ class CellExtractionViewSet(ModelViewSet):
             logger.error('User:', user)
             doctor = Doctor.objects.get(user=user)
             queryset = CellExtraction.objects.all().filter(doctor=doctor)
-        
+
         queryset = queryset.order_by('-extraction_date')
         return queryset
-    
+
     def list(self, request, *args, **kwargs):
         patient = request.query_params.get('patient')
-        
+
         if patient != None:
             patient = Patient.objects.get(id=patient)
             queryset = self.get_queryset().filter(patient=patient)
             serializer = self.get_serializer(queryset, many=True)
             return Response(serializer.data)
-            
+
         return ModelViewSet.list(self, request, *args, **kwargs)
-    
+
     def create(self, request, *args, **kwargs):
         if isinstance(request.data, QueryDict):
             _mutable = request.data._mutable
             request.data._mutable = True
-            
+
         request.data['doctor'] = Doctor.objects.get(user=request.user).id
-        
+
         if isinstance(request.data, QueryDict):
             request.data._mutable = _mutable
-            
+
         return ModelViewSet.create(self, request, *args, **kwargs)
-    
+
     @action(detail=False, methods=['get'])
     def last(self, request):
         doctor = Doctor.objects.get(user=request.user)
         patient = Patient.objects.get(id=request.GET['patient'])
-        
+
         print('Doctor =', doctor)
         print('Patient =', patient)
-        
+
         last_extraction = CellExtraction.objects.filter(doctor=doctor).last()
-        
+
         serializer = self.get_serializer(last_extraction)
-        
+
         return Response(serializer.data)
 
 
@@ -167,3 +169,7 @@ class CellViewSet(ModelViewSet):
 class SlideViewSet(ModelViewSet):
     queryset = Slide.objects.all()
     serializer_class = SlideSerializer
+
+class AnamnesisViewSet(ModelViewSet):
+    queryset = Anamnesis.objects.all()
+    serializer_class = AnamnesisSerializer

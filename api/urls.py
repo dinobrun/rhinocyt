@@ -10,7 +10,8 @@ from api.views import (
     CityViewSet,
     CellExtractionViewSet,
     CellViewSet,
-    SlideViewSet
+    SlideViewSet,
+    AnamnesisViewSet
 )
 
 
@@ -25,10 +26,10 @@ router.register('cell-categories', CellCategoryViewSet)
 router.register('cell-extractions', CellExtractionViewSet)
 router.register('slides', SlideViewSet)
 router.register('cities', CityViewSet)
+router.register('anamnesis', AnamnesisViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
     path('auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('token-auth/', obtain_auth_token, name='api_token_auth')
 ]
-
