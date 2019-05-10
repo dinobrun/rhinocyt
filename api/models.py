@@ -113,25 +113,26 @@ class CellExtraction(ApiModel):
     lymphocyte_num = models.SmallIntegerField(default=0)
     mucipara_num = models.SmallIntegerField(default=0)
 
-    def get_cell_grade(cell_category):
+    def get_cell_grade(self, cell_category):
         """
         Return the grade of a cell category in the cell extraction
         """
         if cell_category == "mucipara":
-            return count300(mucipara_num)
+            return self.count300(self.mucipara_num)
         elif cell_category == "epithelium":
-            return count300(epithelium_num)
+            return self.count300(self.epithelium_num)
         elif cell_category == "neutrophil":
-            return count100(neutrophil_num)
+            return self.count100(self.neutrophil_num)
         elif cell_category == "eosinophil":
-            return count30(eosinophil_num)
+            return self.count30(self.eosinophil_num)
         elif cell_category == "mastocyte":
-            return count30(mastocyte_num)
+            return self.count30(self.mastocyte_num)
         elif cell_category == "lymphocyte":
-            return count30(lymphocyte_num)
+            return self.count30(self.lymphocyte_num)
         else:
             return 0
 
+    @staticmethod
     def count300(cell_number):
         if cell_number == 0:
             return 0
@@ -146,7 +147,8 @@ class CellExtraction(ApiModel):
         else:
             return 0
 
-    def count100(cell_number):
+
+    def count100(self, cell_number):
         if cell_number == 0:
             return 0
         elif cell_number > 0 and cell_number < 21:
@@ -160,7 +162,7 @@ class CellExtraction(ApiModel):
         else:
             return 0
 
-    def count30(cell_number):
+    def count30(self, cell_number):
         if cell_number == 0:
             return 0
         elif cell_number > 0 and cell_number < 6:
@@ -174,7 +176,7 @@ class CellExtraction(ApiModel):
         else:
             return 0
 
-    def count16(cell_number):
+    def count16(self, cell_number):
         if cell_number == 0:
             return 0
         elif cell_number > 0 and cell_number < 4:
@@ -314,6 +316,14 @@ class Slide(ApiModel):
             cell_category = Cell.predict_class(cell_image_path)
             Cell.objects.create(patient=self.patient, slide=self, cell_category=cell_category, image=Cell.getCellRelativePath(cell_image_filename))
 
+        #end for
+        #if patient has at least one anamnesis registered
+        if(Anamnesis.objects.filter(patient=self.patient).count() > 0):
+            #calculate diagnosis
+            last_patient_anamnesis = Anamnesis.objects.filter(patient=self.patient).last()
+            #create istance of diagnosis with the last anamnesis available
+            Diagnosis.objects.create(patient=self.patient, cell_extraction=self.cell_extraction, anamnesis=last_patient_anamnesis)
+            #creare una istanza di diagnosis con tutti i campi e nel save del model diagnosi fare tutti i calcoli con l'ultima anamnesi
 
 class Cell(ApiModel):
     # model vars
@@ -338,22 +348,21 @@ class Cell(ApiModel):
         """
         Get reference for the cell extraction and update the number of cell per type
         """
-        slide_ref = Slide.objects.get(pk=self.slide.pk)
-        cell_extract_ref = CellExtraction.objects.get(pk=slide_ref.cell_extraction.pk)
+        cell_extraction = self.slide.cell_extraction
         #update the number of cells per type in cell_extraction reference
         if self.cell_category == CellCategory.objects.get(name="epithelium"):
-            cell_extract_ref.epithelium_num += 1
+            cell_extraction.epithelium_num += 1
         elif self.cell_category == CellCategory.objects.get(name="neutrophil"):
-            cell_extract_ref.neutrophil_num += 1
+            cell_extraction.neutrophil_num += 1
         elif self.cell_category == CellCategory.objects.get(name="eosinophil"):
-            cell_extract_ref.eosinophil_num += 1
+            cell_extraction.eosinophil_num += 1
         elif self.cell_category == CellCategory.objects.get(name="mastocyte"):
-            cell_extract_ref.mastocyte_num += 1
+            cell_extraction.mastocyte_num += 1
         elif self.cell_category == CellCategory.objects.get(name="lymphocyte"):
-            cell_extract_ref.lymphocye_num += 1
+            cell_extraction.lymphocye_num += 1
         elif self.cell_category == CellCategory.objects.get(name="mucipara"):
-            cell_extract_ref.mucipara_num += 1
-        cell_extract_ref.save()
+            cell_extraction.mucipara_num += 1
+        cell_extraction.save()
         super().save(*args, **kwargs);
 
     @staticmethod
@@ -403,7 +412,7 @@ class Anamnesis(ApiModel):
         ('IN', 'inalanti')
     )
     #Anamnesi familiare
-    patient = models.ForeignKey(Patient, related_name='anamnsesis', on_delete=models.CASCADE)
+    patient = models.ForeignKey(Patient, related_name='anamnesis', on_delete=models.CASCADE)
     anamnesis_date = models.DateTimeField(auto_now_add=True)
     allergy_gen = models.CharField(max_length=2, choices=ALLERG_TYPE, null=True)
     allergy_fra = models.CharField(max_length=2, choices=ALLERG_TYPE, null=True)
@@ -440,6 +449,7 @@ class Anamnesis(ApiModel):
 
     ostr_nas = models.CharField(max_length=2, choices=LEFT_RIGHT_TYPE, null=True)
     rinorrea = models.CharField(max_length=2, choices=RINORREA_ESSUDATO_TYPE, null=True)
+    rinorrea_espans = models.CharField(max_length=2, choices=LEFT_RIGHT_TYPE, null=True)
     prur_nas = models.BooleanField(blank=True, default=False)
     starnutazione = models.CharField(max_length=2, choices=STARNUTAZIONE_TYPE, null=True)
     prob_olf = models.CharField(max_length=2, choices=PROB_OLF_TYPE, null=True)
@@ -481,6 +491,7 @@ class Anamnesis(ApiModel):
     )
 
     pir_nas = models.CharField(max_length=3, choices=PIR_NAS_TYPE, null=True)
+    valv_nas = models.CharField(max_length=3, choices=VALV_NAS_TYPE, null=True)
     setto_nas = models.CharField(max_length=3, choices=SETTO_NAS_TYPE, null=True)
     turb = models.CharField(max_length=3, choices=TURB_TYPE, null=True)
     polip_nas_sx = models.IntegerField(choices=list(zip(range(1, 5), range(1, 5))), unique=True, null=True)
@@ -490,21 +501,228 @@ class Anamnesis(ApiModel):
     prick_test = models.BooleanField(blank=True, default=False)
     #allergy
 
+    def save(self, *args, **kwargs):
+        #saves and create diagnosis with the last available extraction
+        super().save(*args, **kwargs);
+        last_extraction = CellExtraction.objects.filter(patient=self.patient).last()
+        DiagnosisExtraction.objects.create(patient=self.patient, cell_extraction=last_extraction, anamnesis=self)
 
-class Diagnosis(ApiModel):
+
+class DiagnosisExtraction(ApiModel):
     #constants name of files
     FACTS_FILENAME = os.path.join(settings.PROJECT_PATH, 'fatti.clp')
-    FUNCTIONS_FILENAME = os.path.join(settings.PROJECT_PATH, 'funztions.clp')
+    FUNCTIONS_FILENAME = os.path.join(settings.PROJECT_PATH, 'functions.clp')
     DIAGNOSIS_FILENAME = os.path.join(settings.PROJECT_PATH, 'diagnosi.clp')
 
     #fields
-    patient = models.ForeignKey(Patient, related_name='diagnosis', on_delete=models.CASCADE)
-    cell_extraction = models.ForeignKey(CellExtraction, related_name='diagnosis', on_delete=models.CASCADE)
+    patient = models.ForeignKey(Patient, related_name='diagnosis_extraction', on_delete=models.CASCADE)
+    cell_extraction = models.ForeignKey(CellExtraction, related_name='diagnosis_extraction', on_delete=models.CASCADE)
+    anamnesis = models.ForeignKey(Anamnesis, related_name='diagnosis_extraction', on_delete=models.CASCADE)
+    diagnosis_date = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
-        import clips
-        env = clips.Environment()
-        env.load(FACTS_FILENAME)
-        env.load(FUNCTIONS_FILENAME)
-        env.load(DIAGNOSIS_FILENAME)
+        #assert facts for diagnosis calculation
         super().save(*args, **kwargs);
+        self.assert_facts()
+
+    def assert_facts(self):
+        import clips
+        #initialize clips Environment
+        env = clips.Environment()
+
+        #load clips files
+        env.load(self.FACTS_FILENAME)
+        env.load(self.FUNCTIONS_FILENAME)
+        env.load(self.DIAGNOSIS_FILENAME)
+
+        #defining fact templates
+        cellula_template = env.find_template("cellula")
+        famiglia_template = env.find_template("famiglia")
+        sintomo_template = env.find_template("sintomo")
+        scoperta_template = env.find_template("scoperta")
+        rinomanometria_template = env.find_template("rinomanometria")
+        diagnosi_template = env.find_template("diagnosi")
+        prick_test_template = env.find_template("prick-test")
+
+        #assert facts cellule
+        for cell_category in CellCategory.objects.all():
+            cellula_fact = cellula_template.new_fact()
+            cellula_fact['nome'] = clips.Symbol(cell_category.name.capitalize())
+            cellula_fact['grado'] = self.cell_extraction.get_cell_grade(cell_category.name)
+            cellula_fact.assertit()
+
+        if self.anamnesis.allergy_gen != None:
+            famiglia_fact = famiglia_template.new_fact()
+            famiglia_fact['soggetto'] = clips.Symbol("genitore")
+            famiglia_fact['disturbo'] = clips.Symbol("allergia")
+            famiglia_fact['tipo'] = clips.Symbol(self.anamnesis.get_allergy_gen_display())
+            famiglia_fact.assertit()
+
+        if self.anamnesis.allergy_fra != None:
+            famiglia_fact = famiglia_template.new_fact()
+            famiglia_fact['soggetto'] = clips.Symbol("fratello")
+            famiglia_fact['disturbo'] = clips.Symbol("allergia")
+            famiglia_fact['tipo'] = clips.Symbol(self.anamnesis.get_allergy_fra_display())
+            famiglia_fact.assertit()
+
+        if self.anamnesis.polip_nas_gen == True:
+            famiglia_fact = famiglia_template.new_fact()
+            famiglia_fact['soggetto'] = clips.Symbol("genitore")
+            famiglia_fact['disturbo'] = clips.Symbol("poliposi")
+            famiglia_fact.assertit()
+
+        if self.anamnesis.polip_nas_fra == True:
+            famiglia_fact = famiglia_template.new_fact()
+            famiglia_fact['soggetto'] = clips.Symbol("fratello")
+            famiglia_fact['disturbo'] = clips.Symbol("poliposi")
+            famiglia_fact.assertit()
+
+        if self.anamnesis.asma_bronch_gen == True:
+            famiglia_fact = famiglia_template.new_fact()
+            famiglia_fact['soggetto'] = clips.Symbol("genitore")
+            famiglia_fact['disturbo'] = clips.Symbol("asma")
+            famiglia_fact.assertit()
+
+        if self.anamnesis.asma_bronch_fra == True:
+            famiglia_fact = famiglia_template.new_fact()
+            famiglia_fact['soggetto'] = clips.Symbol("fratello")
+            famiglia_fact['disturbo'] = clips.Symbol("asma")
+            famiglia_fact.assertit()
+
+        if self.anamnesis.ostr_nas != None:
+            sintomo_fact = sintomo_template.new_fact()
+            sintomo_fact['nome'] = clips.Symbol("Ostruzione nasale " + self.anamnesis.get_ostr_nas_display())
+            sintomo_fact.assertit()
+
+        if self.anamnesis.rinorrea != None:
+            sintomo_fact = sintomo_template.new_fact()
+            sintomo_fact['nome'] = clips.Symbol("Rinorrea nasale " + self.anamnesis.get_rinorrea_display())
+            sintomo_fact.assertit()
+            sintomo_fact = sintomo_template.new_fact()
+            sintomo_fact['nome'] = clips.Symbol("Espansione rinorrea: " + self.anamnesis.get_rinorrea_espans_display())
+            sintomo_fact.assertit()
+
+        if self.anamnesis.prur_nas == True:
+            sintomo_fact = sintomo_template.new_fact()
+            sintomo_fact['nome'] = clips.Symbol("Prurito nasale")
+            sintomo_fact.assertit()
+
+        if self.anamnesis.starnutazione != None:
+            sintomo_fact = sintomo_template.new_fact()
+            sintomo_fact['nome'] = clips.Symbol("Starnutazione " + self.anamnesis.get_starnutazione_display())
+            sintomo_fact.assertit()
+
+        if self.anamnesis.prob_olf == True:
+            sintomo_fact = sintomo_template.new_fact()
+            sintomo_fact['nome'] = clips.Symbol("Problemi olfattivi dovuti a " + self.anamnesis.get_prob_olf_display())
+            sintomo_fact.assertit()
+
+        if self.anamnesis.ovatt_aur != None:
+            sintomo_fact = sintomo_template.new_fact()
+            sintomo_fact['nome'] = clips.Symbol("Ovattamento " + self.anamnesis.get_ovatt_aur_display())
+            sintomo_fact.assertit()
+
+        if self.anamnesis.ipoacusia != None:
+            sintomo_fact = sintomo_template.new_fact()
+            sintomo_fact['nome'] = clips.Symbol("Ipoacusi " + self.anamnesis.get_ipoacusia_display())
+            sintomo_fact.assertit()
+
+        if self.anamnesis.acufeni != None:
+            sintomo_fact = sintomo_template.new_fact()
+            sintomo_fact['nome'] = clips.Symbol("Acufeni " + self.anamnesis.get_acufeni_display())
+            sintomo_fact.assertit()
+
+        if self.anamnesis.sindr_ver != None:
+            sintomo_fact = sintomo_template.new_fact()
+            sintomo_fact['nome'] = clips.Symbol("Sindrome vertiginosa " + self.anamnesis.get_sindr_ver_display())
+            sintomo_fact.assertit()
+
+        if self.anamnesis.febbre == True:
+            sintomo_fact = sintomo_template.new_fact()
+            sintomo_fact['nome'] = clips.Symbol("Febbre")
+            sintomo_fact.assertit()
+
+        if self.anamnesis.uso_farmaci == True:
+            sintomo_fact = sintomo_template.new_fact()
+            sintomo_fact['nome'] = clips.Symbol("Uso eccessivo di farmaci")
+            sintomo_fact.assertit()
+
+        if self.anamnesis.lacrimazione == True:
+            sintomo_fact = sintomo_template.new_fact()
+            sintomo_fact['nome'] = clips.Symbol("Lacrimazione")
+            sintomo_fact.assertit()
+
+        if self.anamnesis.fotofobia == True:
+            sintomo_fact = sintomo_template.new_fact()
+            sintomo_fact['nome'] = clips.Symbol("Fotofobia")
+            sintomo_fact.assertit()
+
+        if self.anamnesis.prurito_cong == True:
+            sintomo_fact = sintomo_template.new_fact()
+            sintomo_fact['nome'] = clips.Symbol("Prurito occhio")
+            sintomo_fact.assertit()
+
+        if self.anamnesis.bruciore_cong == True:
+            sintomo_fact = sintomo_template.new_fact()
+            sintomo_fact['nome'] = clips.Symbol("Bruciore")
+            sintomo_fact.assertit()
+
+        if self.anamnesis.pir_nas != None and self.anamnesis.get_pir_nas_display() != 'normoformata':
+            scoperta_fact = scoperta_template.new_fact()
+            scoperta_fact['parte-anatomica'] = clips.Symbol("piramide-nasale")
+            scoperta_fact['caratteristica'] = clips.Symbol(self.anamnesis.get_pir_nas_display())
+            scoperta_fact.assertit()
+
+        if self.anamnesis.valv_nas != None and self.anamnesis.get_valv_nas_display() != 'normofunzionante':
+            scoperta_fact = scoperta_template.new_fact()
+            scoperta_fact['parte-anatomica'] = clips.Symbol("valvola-nasale")
+            scoperta_fact['caratteristica'] = clips.Symbol(self.anamnesis.get_valv_nas_display())
+            scoperta_fact.assertit()
+
+        if self.anamnesis.setto_nas != None and self.anamnesis.get_setto_nas_display() != 'in asse':
+            scoperta_fact = scoperta_template.new_fact()
+            scoperta_fact['parte-anatomica'] = clips.Symbol("setto-nasale")
+            scoperta_fact['caratteristica'] = clips.Symbol(self.anamnesis.get_setto_nas_display())
+            scoperta_fact.assertit()
+
+        if self.anamnesis.turb != None and self.anamnesis.get_turb_display() != 'normoformata':
+            scoperta_fact = scoperta_template.new_fact()
+            scoperta_fact['parte-anatomica'] = clips.Symbol("turbinati")
+            scoperta_fact['caratteristica'] = clips.Symbol(self.anamnesis.get_turb_display())
+            scoperta_fact.assertit()
+
+        if self.anamnesis.polip_nas_sx != None:
+            scoperta_fact = scoperta_template.new_fact()
+            scoperta_fact['parte-anatomica'] = clips.Symbol("poliposi-sinistra")
+            scoperta_fact['caratteristica'] = clips.Symbol(self.anamnesis.polip_nas_sx)
+            scoperta_fact.assertit()
+
+        if self.anamnesis.polip_nas_dx != None:
+            scoperta_fact = scoperta_template.new_fact()
+            scoperta_fact['parte-anatomica'] = clips.Symbol("poliposi-destra")
+            scoperta_fact['caratteristica'] = clips.Symbol(self.anamnesis.polip_nas_dx)
+            scoperta_fact.assertit()
+
+        if self.anamnesis.essudato != None:
+            scoperta_fact = scoperta_template.new_fact()
+            scoperta_fact['parte-anatomica'] = clips.Symbol("essudato")
+            scoperta_fact['caratteristica'] = clips.Symbol(self.anamnesis.get_essudato_display())
+            scoperta_fact.assertit()
+
+        #run the diagnosis calculation
+        env.run()
+        #evalutate all diagnosis
+        extracted_diagnosis = env.eval("(find-all-facts((?f diagnosi)) TRUE)")
+
+        #loop through diagnosis extracted from run
+        for diagnosis_extr in extracted_diagnosis:
+            #create instance of diagnosis with name and information
+            Diagnosis.objects.create(diagnosis_extraction=self, name=diagnosis_extr["nome"], information=diagnosis_extr["informazioni"])
+        #clear the environment
+        env.clear()
+
+class Diagnosis(ApiModel):
+    #fields
+    diagnosis_extraction = models.ForeignKey(DiagnosisExtraction, related_name='diagnosis', on_delete=models.CASCADE)
+    name = models.CharField(max_length=30)
+    information = models.CharField(max_length=300)

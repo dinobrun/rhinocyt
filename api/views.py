@@ -114,10 +114,10 @@ class CellExtractionViewSet(ModelViewSet):
         if user.is_staff:
             queryset = CellExtraction.objects.all()
         elif not isinstance(user, AnonymousUser):
-            print('User:', user);
+            #print('User:', user);
             import logging
             logger = logging.getLogger(__name__)
-            logger.error('User:', user)
+            #logger.error('User:', user)
             doctor = Doctor.objects.get(user=user)
             queryset = CellExtraction.objects.all().filter(doctor=doctor)
 
