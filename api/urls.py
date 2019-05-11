@@ -11,7 +11,9 @@ from api.views import (
     CellExtractionViewSet,
     CellViewSet,
     SlideViewSet,
-    AnamnesisViewSet
+    AnamnesisViewSet,
+    DiagnosisViewSet,
+    DiagnosisExtractionViewSet
 )
 
 
@@ -27,6 +29,8 @@ router.register('cell-extractions', CellExtractionViewSet)
 router.register('slides', SlideViewSet)
 router.register('cities', CityViewSet)
 router.register('anamnesis', AnamnesisViewSet)
+router.register('diagnosis-extractions', DiagnosisExtractionViewSet)
+router.register('diagnosis', DiagnosisViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

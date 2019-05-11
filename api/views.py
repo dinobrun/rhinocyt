@@ -16,7 +16,9 @@ from api.models import (
     CellExtraction,
     Cell,
     Slide,
-    Anamnesis
+    Anamnesis,
+    DiagnosisExtraction,
+    Diagnosis
 )
 
 from api.serializers import (
@@ -27,7 +29,9 @@ from api.serializers import (
     CellExtractionSerializer,
     CellSerializer,
     SlideSerializer,
-    AnamnesisSerializer
+    AnamnesisSerializer,
+    DiagnosisSerializer,
+    DiagnosisExtractionSerializer
 )
 from api.permissions import IsPatientOwner
 from django.http.request import QueryDict
@@ -173,3 +177,11 @@ class SlideViewSet(ModelViewSet):
 class AnamnesisViewSet(ModelViewSet):
     queryset = Anamnesis.objects.all()
     serializer_class = AnamnesisSerializer
+
+class DiagnosisViewSet(ModelViewSet):
+    queryset = Diagnosis.objects.all()
+    serializer_class = DiagnosisSerializer
+
+class DiagnosisExtractionViewSet(ModelViewSet):
+    queryset = DiagnosisExtraction.objects.all()
+    serializer_class = DiagnosisExtractionSerializer

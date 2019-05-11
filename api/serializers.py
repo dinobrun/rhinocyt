@@ -14,7 +14,9 @@ from api.models import (
     CellExtraction,
     Cell,
     Slide,
-    Anamnesis
+    Anamnesis,
+    DiagnosisExtraction,
+    Diagnosis
 )
 
 
@@ -106,4 +108,16 @@ class CellExtractionSerializer(ModelSerializer):
 class AnamnesisSerializer(ModelSerializer):
     class Meta:
         model = Anamnesis
+        fields = '__all__'
+
+class DiagnosisSerializer(ModelSerializer):
+    class Meta:
+        model = Diagnosis
+        fields = '__all__'
+
+class DiagnosisExtractionSerializer(ModelSerializer):
+    diagnosis = DiagnosisSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = DiagnosisExtraction
         fields = '__all__'
