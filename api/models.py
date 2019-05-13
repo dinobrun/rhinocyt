@@ -318,11 +318,11 @@ class Slide(ApiModel):
 
         #end for
         #if patient has at least one anamnesis registered
-        if(Anamnesis.objects.filter(patient=self.patient).count() > 0):
+        #if(Anamnesis.objects.filter(patient=self.patient).count() > 0):
             #calculate diagnosis
-            last_patient_anamnesis = Anamnesis.objects.filter(patient=self.patient).last()
+            #last_patient_anamnesis = Anamnesis.objects.filter(patient=self.patient).last()
             #create istance of diagnosis with the last anamnesis available
-            Diagnosis.objects.create(patient=self.patient, cell_extraction=self.cell_extraction, anamnesis=last_patient_anamnesis)
+            #Diagnosis.objects.create(patient=self.patient, cell_extraction=self.cell_extraction, anamnesis=last_patient_anamnesis)
             #creare una istanza di diagnosis con tutti i campi e nel save del model diagnosi fare tutti i calcoli con l'ultima anamnesi
 
 class Cell(ApiModel):
@@ -405,6 +405,7 @@ class Cell(ApiModel):
     @staticmethod
     def getCellRelativePath(filename):
         return os.path.join(Cell.MEDIA_FOLDER, filename)
+
 
 class Anamnesis(ApiModel):
     ALLERG_TYPE = (
@@ -498,15 +499,175 @@ class Anamnesis(ApiModel):
     polip_nas_dx = models.IntegerField(choices=list(zip(range(1, 5), range(1, 5))), unique=True, null=True)
     essudato = models.CharField(max_length=2, choices=RINORREA_ESSUDATO_TYPE, null=True)
     ipertr_adenoidea = models.IntegerField(choices=list(zip(range(1, 5), range(1, 5))), unique=True, null=True)
-    prick_test = models.BooleanField(blank=True, default=False)
-    #allergy
 
     def save(self, *args, **kwargs):
         #saves and create diagnosis with the last available extraction
         super().save(*args, **kwargs);
         last_extraction = CellExtraction.objects.filter(patient=self.patient).last()
-        DiagnosisExtraction.objects.create(patient=self.patient, cell_extraction=last_extraction, anamnesis=self)
+        #DiagnosisExtraction.objects.create(patient=self.patient, cell_extraction=last_extraction, anamnesis=self)
 
+
+class Allergy(ApiModel):
+    type = models.CharField(max_length=25)
+
+    def evaluate_month(type, month):
+        import numpy as np
+        mesi = np.zeros(36)
+        #graminacee
+        if type == "Graminacee":
+            for n in range(7, 28):
+                mesi[n] = 1
+            for n in range(10, 20):
+                mesi[n] = 2
+            for n in range(12, 16):
+                mesi[n] = 3
+        #cupressacee
+        elif type == "Cupressacee/Taxacee":
+            for n in range(0, 12):
+                mesi[n] = 1
+            mesi[4] = 2
+            mesi[9] = 2
+            for n in range(5, 9):
+                mesi[n] = 3
+        #nocciolo
+        elif type == "Nocciolo":
+            for n in range(2, 11):
+                mesi[n] = 1
+            mesi[5] = 2
+            mesi[6] = 2
+        #ontano
+        elif type == "Ontano":
+            for n in range(2, 10):
+                mesi[n] = 1
+            mesi[5] = 2
+            mesi[6] = 2
+            for n in range(13, 17):
+                mesi[n] = 1
+        #pioppo
+        elif type == "Pioppo":
+            for n in range(5, 11):
+                mesi[n] = 1
+            mesi[7] = 3
+            mesi[8] = 2
+        #frassino
+        elif type == "Frassino comune":
+            for n in range(5, 13):
+                mesi[n] = 1
+            for n in range(8, 12):
+                mesi[n] = 2
+        #betulla
+        elif type == "Betulla":
+            for n in range(8, 11):
+                mesi[n] = 3
+            mesi[11] = 2
+            mesi[7] = 2
+            for n in range(12, 15):
+                mesi[n] = 1
+        #salice
+        elif type == "Salice":
+            for n in range(7, 12):
+                mesi[n] = 1
+        #carpino nero
+        elif type == "Carpino nero":
+            for n in range(7, 18):
+                mesi[n] = 1
+            mesi[19] = 1
+            for n in range(8, 13):
+                mesi[n] = 3
+        #quercia
+        elif type == "Quercia":
+            for n in range(8, 15):
+                mesi[n] = 1
+            for n in range(9, 13):
+                mesi[n] = 2
+            for n in range(10, 12):
+                mesi[n] = 3
+        #poligonacee
+        elif type == "Poligonacee":
+            for n in range(9, 16):
+                mesi[n] = 1
+        #orniello
+        elif type == "Orniello":
+            for n in range(9, 18):
+                mesi[n] = 1
+            for n in range(10, 15):
+                mesi[n] = 2
+            for n in range(11, 14):
+                mesi[n] = 3
+        #urticacee
+        elif type == "Urticacee":
+            for n in range(9, 35):
+                mesi[n] = 1
+            for n in range(11, 28):
+                mesi[n] = 2
+            for n in range(16, 25):
+                mesi[n] = 3
+        #castagno
+        elif type == "Castagno":
+            for n in range(14, 21):
+                mesi[n] = 1
+            mesi[16] = 2
+            mesi[17] = 3
+            mesi[18] = 2
+        #platano
+        elif type == "Platano":
+            mesi[8] = 2
+            mesi[10] = 2
+            mesi[11] = 1
+            mesi[9] = 3
+        #pinacee
+        elif type == "Pinacee":
+            for n in range(9, 21):
+                mesi[n] = 1
+            for n in range(25, 35):
+                mesi[n] = 1
+            for n in range(11, 17):
+                mesi[n] = 2
+            for n in range(12, 15):
+                mesi[n] = 3
+            for n in range(26, 29):
+                mesi[n] = 2
+            mesi[30] = 2
+        #piantaggine
+        elif type == "Piantaggine":
+            for n in range(9, 28):
+                mesi[n] = 1
+            for n in range(12, 26):
+                mesi[n] = 2
+            for n in range(14, 24):
+                mesi[n] = 3
+        #assenzio
+        elif type == "Urticacee":
+            for n in range(19, 23):
+                mesi[n] = 1
+            mesi[22] = 2
+            mesi[26] = 2
+
+        finemese = mesi[month * 3 - 1]
+        metamese = mesi[month * 3 - 2]
+        iniziomese = mesi[month * 3 - 3]
+        media = (finemese + metamese + iniziomese)/3
+        return media
+
+
+class PrickTest(ApiModel):
+    anamnesis = models.ForeignKey(Anamnesis, related_name='prick_test', on_delete=models.CASCADE)
+    allergy = models.ForeignKey(Allergy, related_name='prick_test', on_delete=models.CASCADE)
+    period = models.CharField(max_length=15, null=True)
+    date = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        #assert facts for diagnosis calculation
+        ##TO-DO prendere il mese dalla data!!!!!
+        self.period = self.get_presence(Allergy.evaluate_month(self.allergy.type, 4))
+        #########
+        super().save(*args, **kwargs);
+
+    def get_presence(self, media):
+        if media >= 0 and media < 1.50:
+            return "Apollinico"
+        if media >= 1.50 and media < 3.50:
+            return "Pollinico"
 
 class DiagnosisExtraction(ApiModel):
     #constants name of files
@@ -709,6 +870,13 @@ class DiagnosisExtraction(ApiModel):
             scoperta_fact['caratteristica'] = clips.Symbol(self.anamnesis.get_essudato_display())
             scoperta_fact.assertit()
 
+        #allergy assert
+        for prick_test in PrickTest.objects.filter(anamnesis=self.anamnesis):
+            prick_test_fact = prick_test_template.new_fact()
+            prick_test_fact["esito"] = clips.Symbol("positivo")
+            prick_test_fact["periodo"] = clips.Symbol(prick_test.period)
+            prick_test_fact["allergene"] = clips.Symbol(prick_test.allergy.type)
+            prick_test_fact.assertit()
         #run the diagnosis calculation
         env.run()
         #evalutate all diagnosis

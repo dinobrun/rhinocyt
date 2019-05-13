@@ -16,7 +16,8 @@ from api.models import (
     Slide,
     Anamnesis,
     DiagnosisExtraction,
-    Diagnosis
+    Diagnosis,
+    PrickTest
 )
 
 
@@ -105,7 +106,13 @@ class CellExtractionSerializer(ModelSerializer):
         model = CellExtraction
         fields = '__all__'
 
+class PrickTestSerializer(ModelSerializer):
+    class Meta:
+        model = PrickTest
+        fields = '__all__'
+
 class AnamnesisSerializer(ModelSerializer):
+    prick_test = PrickTestSerializer(many=True, read_only=True)
     class Meta:
         model = Anamnesis
         fields = '__all__'
