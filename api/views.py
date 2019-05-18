@@ -178,6 +178,17 @@ class AnamnesisViewSet(ModelViewSet):
     queryset = Anamnesis.objects.all()
     serializer_class = AnamnesisSerializer
 
+    def list(self, request, *args, **kwargs):
+        patient = request.query_params.get('patient')
+
+        if patient != None:
+            patient = Patient.objects.get(id=patient)
+            queryset = self.get_queryset().filter(patient=patient)
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+
+        return ModelViewSet.list(self, request, *args, **kwargs)
+
 class DiagnosisViewSet(ModelViewSet):
     queryset = Diagnosis.objects.all()
     serializer_class = DiagnosisSerializer

@@ -68,6 +68,15 @@ class Patient(ApiModel):
     created = models.DateTimeField(auto_now_add=True)
     doctor = models.ForeignKey(Doctor, related_name='patients', on_delete=models.CASCADE)
 
+    def save(self, *args, **kwargs):
+        """
+        Control if patient already exists before creating a new one
+        """
+        if Patient.objects.filter(doctor = self.doctor, fiscal_code = self.fiscal_code).count() == 0:
+            super().save(*args, **kwargs)
+        else:
+            raise Exception('The patient already exists')
+
 
     def getDataPath(self):
         """
