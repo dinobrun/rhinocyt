@@ -18,7 +18,9 @@ from api.models import (
     Slide,
     Anamnesis,
     DiagnosisExtraction,
-    Diagnosis
+    Diagnosis,
+    Allergy,
+    PrickTest
 )
 
 from api.serializers import (
@@ -31,7 +33,9 @@ from api.serializers import (
     SlideSerializer,
     AnamnesisSerializer,
     DiagnosisSerializer,
-    DiagnosisExtractionSerializer
+    DiagnosisExtractionSerializer,
+    AllergySerializer,
+    PrickTestSerializer
 )
 from api.permissions import IsPatientOwner
 from django.http.request import QueryDict
@@ -196,3 +200,15 @@ class DiagnosisViewSet(ModelViewSet):
 class DiagnosisExtractionViewSet(ModelViewSet):
     queryset = DiagnosisExtraction.objects.all()
     serializer_class = DiagnosisExtractionSerializer
+
+class PrickTestViewSet(ModelViewSet):
+    queryset = PrickTest.objects.all()
+    serializer_class = PrickTestSerializer
+
+class AllergyViewSet(ModelViewSet):
+    queryset = Allergy.objects.all()
+    serializer_class = AllergySerializer
+
+    def list(self, request, *args, **kwargs):
+        serializer = self.get_serializer(self.queryset, many=True)
+        return Response(serializer.data)

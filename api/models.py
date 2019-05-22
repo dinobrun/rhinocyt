@@ -668,7 +668,7 @@ class PrickTest(ApiModel):
     def save(self, *args, **kwargs):
         #assert facts for diagnosis calculation
         ##TO-DO prendere il mese dalla data!!!!!
-        self.period = self.get_presence(Allergy.evaluate_month(self.allergy.type, 4))
+        self.period = self.get_presence(Allergy.evaluate_month(self.allergy.type, self.anamnesis.anamnesis_date.month))
         #########
         super().save(*args, **kwargs);
 
@@ -890,6 +890,9 @@ class DiagnosisExtraction(ApiModel):
         env.run()
         #evalutate all diagnosis
         extracted_diagnosis = env.eval("(find-all-facts((?f diagnosi)) TRUE)")
+
+        for fact in env.facts():
+            print(fact)
 
         #loop through diagnosis extracted from run
         for diagnosis_extr in extracted_diagnosis:

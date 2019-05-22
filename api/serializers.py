@@ -17,6 +17,7 @@ from api.models import (
     Anamnesis,
     DiagnosisExtraction,
     Diagnosis,
+    Allergy,
     PrickTest
 )
 
@@ -127,4 +128,9 @@ class DiagnosisExtractionSerializer(ModelSerializer):
 
     class Meta:
         model = DiagnosisExtraction
+        fields = '__all__'
+
+class AllergySerializer(ModelSerializer):
+    class Meta:
+        model = Allergy
         fields = '__all__'
