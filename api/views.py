@@ -157,13 +157,9 @@ class CellExtractionViewSet(ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def last(self, request):
-        doctor = Doctor.objects.get(user=request.user)
         patient = Patient.objects.get(id=request.GET['patient'])
 
-        print('Doctor =', doctor)
-        print('Patient =', patient)
-
-        last_extraction = CellExtraction.objects.filter(doctor=doctor).last()
+        last_extraction = CellExtraction.objects.filter(patient=patient).last()
 
         serializer = self.get_serializer(last_extraction)
 
@@ -193,6 +189,16 @@ class AnamnesisViewSet(ModelViewSet):
 
         return ModelViewSet.list(self, request, *args, **kwargs)
 
+    @action(detail=False, methods=['get'])
+    def last(self, request):
+        patient = Patient.objects.get(id=request.GET['patient'])
+
+        last_anamnesis = Anamnesis.objects.filter(patient=patient).last()
+
+        serializer = self.get_serializer(last_anamnesis)
+
+        return Response(serializer.data)
+
 class DiagnosisViewSet(ModelViewSet):
     queryset = Diagnosis.objects.all()
     serializer_class = DiagnosisSerializer
@@ -200,6 +206,17 @@ class DiagnosisViewSet(ModelViewSet):
 class DiagnosisExtractionViewSet(ModelViewSet):
     queryset = DiagnosisExtraction.objects.all()
     serializer_class = DiagnosisExtractionSerializer
+
+    def list(self, request, *args, **kwargs):
+        patient = request.query_params.get('patient')
+
+        if patient != None:
+            patient = Patient.objects.get(id=patient)
+            queryset = self.get_queryset().filter(patient=patient)
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+
+        return ModelViewSet.list(self, request, *args, **kwargs)
 
 class PrickTestViewSet(ModelViewSet):
     queryset = PrickTest.objects.all()

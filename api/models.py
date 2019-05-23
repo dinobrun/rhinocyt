@@ -691,6 +691,10 @@ class DiagnosisExtraction(ApiModel):
     diagnosis_date = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
+        #control if diagnosis has already been made with the combination
+        #of cell extraction and anamnesis ids
+        if DiagnosisExtraction.objects.filter(cell_extraction=self.cell_extraction, anamnesis=self.anamnesis).count() > 0:
+            raise Exception('The diagnosis has already been made')
         #assert facts for diagnosis calculation
         super().save(*args, **kwargs);
         self.assert_facts()
