@@ -113,6 +113,7 @@ class CellExtraction(ApiModel):
     mastocyte_num = models.SmallIntegerField(default=0)
     lymphocyte_num = models.SmallIntegerField(default=0)
     mucipara_num = models.SmallIntegerField(default=0)
+    other_num = models.SmallIntegerField(default=0)
 
     def get_cell_grade(self, cell_category):
         """
@@ -363,6 +364,8 @@ class Cell(ApiModel):
             cell_extraction.lymphocyte_num += 1
         elif self.cell_category == CellCategory.objects.get(name="mucipara"):
             cell_extraction.mucipara_num += 1
+        elif self.cell_category == CellCategory.objects.get(name="other"):
+            cell_extraction.other_num += 1
         cell_extraction.save()
         super().save(*args, **kwargs);
 
@@ -951,6 +954,7 @@ class Report(ApiModel):
                     ['Mucipare',    self.cell_extraction.mucipara_num,    self.cell_extraction.get_cell_grade('mucipara')],
                     ['Eosinofili',  self.cell_extraction.lymphocyte_num,  self.cell_extraction.get_cell_grade('eosinophil')],
                     ['Mastcellule', self.cell_extraction.mastocyte_num,   self.cell_extraction.get_cell_grade('mastocyte')],
+                    ['Altro',       self.cell_extraction.other_num,       "-"],
                     ]
 
             # Document title centered, 'B'old, 14 pt
