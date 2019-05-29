@@ -235,3 +235,18 @@ class AllergyViewSet(ModelViewSet):
 class ReportViewSet(ModelViewSet):
     queryset = Report.objects.all()
     serializer_class = ReportSerializer
+
+    def list(self, request, *args, **kwargs):
+        anamnesis = request.query_params.get('anamnesis')
+        cell_extraction = request.query_params.get('cell_extraction')
+        print(cell_extraction)
+        print(anamnesis)
+
+        if anamnesis != None:
+            anamnesis = Anamnesis.objects.get(id=anamnesis)
+            cell_extraction = CellExtraction.objects.get(id=cell_extraction)
+            queryset = self.get_queryset().filter(anamnesis=anamnesis, cell_extraction=cell_extraction)
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+
+        return ModelViewSet.list(self, request, *args, **kwargs)
