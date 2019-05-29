@@ -20,6 +20,7 @@ from api.models import (
     DiagnosisExtraction,
     Diagnosis,
     Allergy,
+    Report,
     PrickTest
 )
 
@@ -35,6 +36,7 @@ from api.serializers import (
     DiagnosisSerializer,
     DiagnosisExtractionSerializer,
     AllergySerializer,
+    ReportSerializer,
     PrickTestSerializer
 )
 from api.permissions import IsPatientOwner
@@ -229,3 +231,7 @@ class AllergyViewSet(ModelViewSet):
     def list(self, request, *args, **kwargs):
         serializer = self.get_serializer(self.queryset, many=True)
         return Response(serializer.data)
+
+class ReportViewSet(ModelViewSet):
+    queryset = Report.objects.all()
+    serializer_class = ReportSerializer

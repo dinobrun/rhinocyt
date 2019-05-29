@@ -15,6 +15,7 @@ from api.views import (
     DiagnosisViewSet,
     DiagnosisExtractionViewSet,
     PrickTestViewSet,
+    ReportViewSet,
     AllergyViewSet
 )
 
@@ -35,6 +36,7 @@ router.register('diagnosis-extractions', DiagnosisExtractionViewSet)
 router.register('diagnosis', DiagnosisViewSet)
 router.register('prick-test', PrickTestViewSet)
 router.register('allergy', AllergyViewSet)
+router.register('report', ReportViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
