@@ -68,14 +68,6 @@ class Patient(ApiModel):
     created = models.DateTimeField(auto_now_add=True)
     doctor = models.ForeignKey(Doctor, related_name='patients', on_delete=models.CASCADE)
 
-    def save(self, *args, **kwargs):
-        """
-        Control if patient already exists before creating a new one
-        """
-        if Patient.objects.filter(doctor = self.doctor, fiscal_code = self.fiscal_code).count() == 0:
-            super().save(*args, **kwargs)
-        else:
-            raise Exception('The patient already exists')
 
 
     def getDataPath(self):
@@ -914,8 +906,8 @@ class Diagnosis(ApiModel):
 class Report(ApiModel):
     #fields
     report_date = models.DateTimeField(auto_now_add=True)
-    anamnesis = models.ForeignKey(Anamnesis, related_name='report', on_delete=models.CASCADE)
-    cell_extraction = models.ForeignKey(CellExtraction, related_name='report', on_delete=models.CASCADE)
+    anamnesis = models.ForeignKey(Anamnesis, related_name='report', null=True, on_delete=models.CASCADE)
+    cell_extraction = models.ForeignKey(CellExtraction, related_name='report', null=True, on_delete=models.CASCADE)
     report_file = models.FileField(upload_to='report/', null=True)
 
     # the media folder name
@@ -948,146 +940,153 @@ class Report(ApiModel):
         # evenly across table and page
         col_width = epw / 4
 
-        title = ['Nome', 'Conta cellule', 'Grado']
-        data = [['Neutrofili',  self.cell_extraction.neutrophil_num,  self.cell_extraction.get_cell_grade('neutrophil')],
-                ['Epiteliali',  self.cell_extraction.epithelium_num,  self.cell_extraction.get_cell_grade('epithelium')],
-                ['Linfociti',   self.cell_extraction.lymphocyte_num,  self.cell_extraction.get_cell_grade('lymphocyte')],
-                ['Mucipare',    self.cell_extraction.mucipara_num,    self.cell_extraction.get_cell_grade('mucipara')],
-                ['Eosinofili',  self.cell_extraction.lymphocyte_num,  self.cell_extraction.get_cell_grade('eosinophil')],
-                ['Mastcellule', self.cell_extraction.mastocyte_num,   self.cell_extraction.get_cell_grade('mastocyte')],
-                ]
-
-        # Document title centered, 'B'old, 14 pt
-        pdf.set_font('Times', 'B', 20.0)
-        pdf.cell(epw, 0.0, 'Demographic data', align='C')
-        pdf.set_font('Times', '', 14.0)
-        pdf.ln(0.5)
-
         # Text height is the same as current font size
         th = pdf.font_size
 
-        # Line break equivalent to 4 lines
-        pdf.ln(4 * th)
+        if(self.cell_extraction != None):
+            title = ['Nome', 'Conta cellule', 'Grado']
+            data = [['Neutrofili',  self.cell_extraction.neutrophil_num,  self.cell_extraction.get_cell_grade('neutrophil')],
+                    ['Epiteliali',  self.cell_extraction.epithelium_num,  self.cell_extraction.get_cell_grade('epithelium')],
+                    ['Linfociti',   self.cell_extraction.lymphocyte_num,  self.cell_extraction.get_cell_grade('lymphocyte')],
+                    ['Mucipare',    self.cell_extraction.mucipara_num,    self.cell_extraction.get_cell_grade('mucipara')],
+                    ['Eosinofili',  self.cell_extraction.lymphocyte_num,  self.cell_extraction.get_cell_grade('eosinophil')],
+                    ['Mastcellule', self.cell_extraction.mastocyte_num,   self.cell_extraction.get_cell_grade('mastocyte')],
+                    ]
 
-        pdf.set_fill_color( 100, 100, 100)
-        for row in title:
-            pdf.cell(col_width, th, row, border=1 ,fill=True)
+            # Document title centered, 'B'old, 14 pt
+            pdf.set_font('Times', 'B', 20.0)
+            pdf.cell(epw, 0.0, 'Report', align='C')
+            pdf.set_font('Times', '', 14.0)
+            pdf.ln(0.5)
 
-        pdf.ln(th)
-        pdf.set_fill_color( 255, 255, 255)
-        for row in data:
-            for datum in row:
-                # Use the function str to coerce any input to string type.
-                pdf.cell(col_width, th, str(datum), border=1)
-                # pdf.cell(col_width, 2 * th, str(datum), border=1) per spaziare di piu
+
+
+            # Line break equivalent to 4 lines
+            pdf.ln(4 * th)
+
+            pdf.set_fill_color( 100, 100, 100)
+            for row in title:
+                pdf.cell(col_width, th, row, border=1 ,fill=True)
 
             pdf.ln(th)
+            pdf.set_fill_color( 255, 255, 255)
+            for row in data:
+                for datum in row:
+                    # Use the function str to coerce any input to string type.
+                    pdf.cell(col_width, th, str(datum), border=1)
+                    # pdf.cell(col_width, 2 * th, str(datum), border=1) per spaziare di piu
 
-        pdf.multi_cell(col_width, th, "Messaggio di testo. Messaggio di testo. Messaggio di testo. Messaggio di testo.")
-        pdf.multi_cell(col_width, th, "Messaggio di testo. Messaggio di testo. Messaggio di testo. Messaggio di testo.")
-        pdf.ln()
-
-
-
-        pdf.set_font('Times', 'B', 20.0)
-        pdf.cell(epw, 0.0, 'Anamnesi', align='C')
-        pdf.set_font('Times', '', 14.0)
-        pdf.ln(0.5)
-        pdf.cell(col_width, th, "Anamnesi familiare")
-        pdf.ln()
-
-        pdf.set_font('Times', '', 12.0)
-
-
-        pdf.multi_cell(col_width, th, "Allergia Genitori: " + Report.getYesOrNo(self.anamnesis.get_allergy_gen_display()))
-        pdf.cell(col_width, th, "Tipo Allergia Genitori: " + Report.ifNotNull(self.anamnesis.get_allergy_gen_display()))
-        pdf.ln()
-        pdf.multi_cell(col_width, th, "Allergia Fratelli: " + Report.getYesOrNo(self.anamnesis.get_allergy_fra_display()))
-        pdf.cell(col_width, th, "Tipo Allergia Fratelli: " + Report.ifNotNull(self.anamnesis.get_allergy_fra_display()))
-        pdf.ln()
-        pdf.cell(col_width, th, "Poliposi Genitori: " + Report.getBooleanValue(self.anamnesis.polip_nas_gen))
-        pdf.ln()
-        pdf.cell(col_width, th, "Asma Genitori: " + Report.getBooleanValue(self.anamnesis.asma_bronch_gen))
-        pdf.ln()
-        pdf.cell(col_width, th, "Asma Fratelli: " + Report.getBooleanValue(self.anamnesis.asma_bronch_fra))
-        pdf.ln()
-        pdf.cell(col_width, th, "Appunti Anamnesi Familiare:")
+                pdf.ln(th)
         pdf.ln()
         pdf.ln()
 
-        pdf.cell(col_width, th, "Patologica prossima - Sintomi")
-        pdf.ln()
-        pdf.cell(col_width, th, "Ostruzione: " + Report.ifNotNull(self.anamnesis.get_ostr_nas_display()))
-        pdf.ln()
-        pdf.cell(col_width, th, "Rinorrea: " + Report.ifNotNull(self.anamnesis.get_rinorrea_display()) + " " + Report.ifNotNull(self.anamnesis.get_rinorrea_espans_display()))
-        pdf.ln()
-        pdf.cell(col_width, th, "Prurito nasale: " + Report.getBooleanValue(self.anamnesis.prur_nas))
-        pdf.ln()
-        pdf.cell(col_width, th, "Starnutazione: " + Report.ifNotNull(self.anamnesis.get_starnutazione_display()))
-        pdf.ln()
-        pdf.cell(col_width, th, "Problemi olfattivi: " + Report.ifNotNull(self.anamnesis.get_prob_olf_display()))
-        pdf.ln()
-        pdf.cell(col_width, th, "Ovattamento auricolare: " + Report.ifNotNull(self.anamnesis.get_ovatt_aur_display()))
-        pdf.ln()
-        pdf.cell(col_width, th, "Ipoacusia: " + Report.ifNotNull(self.anamnesis.get_ipoacusia_display()))
-        pdf.ln()
-        pdf.cell(col_width, th, "Acufeni: " + Report.ifNotNull(self.anamnesis.get_acufeni_display()))
-        pdf.ln()
-        pdf.cell(col_width, th, "Sindrome vertiginosa: " + Report.ifNotNull(self.anamnesis.get_sindr_ver_display()))
-        pdf.ln()
-        pdf.cell(col_width, th, "Febbre: " + Report.getBooleanValue(self.anamnesis.febbre))
-        pdf.ln()
-        pdf.cell(col_width, th, "Uso farmaci: " + Report.getBooleanValue(self.anamnesis.uso_farmaci))
-        pdf.ln()
-        pdf.cell(col_width, th, "Lacrimazione: " + Report.getBooleanValue(self.anamnesis.lacrimazione))
-        pdf.ln()
-        pdf.cell(col_width, th, "Fotofobia: " + Report.getBooleanValue(self.anamnesis.fotofobia))
-        pdf.ln()
-        pdf.cell(col_width, th, "Prurito : " + Report.getBooleanValue(self.anamnesis.prurito_cong))
-        pdf.ln()
-        pdf.cell(col_width, th, "Bruciore: " + Report.getBooleanValue(self.anamnesis.bruciore_cong))
-        pdf.ln()
-        pdf.cell(col_width, th, "Appunti Anamnesi Patologica Prossima:")
-        pdf.ln()
-        pdf.ln()
-        pdf.cell(col_width, th, "Esame obbiettivo strumentale del naso")
-        pdf.ln()
-        pdf.cell(col_width, th, "Piramide nasale: " + Report.ifNotNull(self.anamnesis.get_pir_nas_display()))
-        pdf.ln()
-        pdf.cell(col_width, th, "Valvola nasale: " + Report.ifNotNull(self.anamnesis.get_valv_nas_display()))
-        pdf.ln()
-        pdf.ln()
-        pdf.cell(col_width, th, "Endoscopia nasale, Esame Rinomanometrico, Esame Otoscopico e Allergologico")
-        pdf.ln()
-        pdf.cell(col_width, th, "Setto nasale: " + Report.ifNotNull(self.anamnesis.get_setto_nas_display()))
-        pdf.ln()
-        pdf.cell(col_width, th, "Turbinati: " + Report.ifNotNull(self.anamnesis.get_turb_display()))
-        pdf.ln()
-        pdf.cell(col_width, th, "Poliposi lato sinistro: " + str(self.anamnesis.polip_nas_sx))
-        pdf.ln()
-        pdf.cell(col_width, th, "Poliposi lato destro: " + str(self.anamnesis.polip_nas_dx))
-        pdf.ln()
-        pdf.cell(col_width, th, "Essudato: " + Report.ifNotNull(self.anamnesis.get_essudato_display()))
-        pdf.ln()
-        pdf.cell(col_width, th, "Ipertrofia: " + str(self.anamnesis.ipertr_adenoidea))
-        pdf.ln()
-        pdf.cell(col_width, th, "Appunti Esame Rinomanometrico:")
-        pdf.ln()
-        pdf.cell(col_width, th, "Allergia/e: " + self.getAllergy())
-        pdf.ln()
-        pdf.cell(col_width, th, "Base Dx:")
-        pdf.ln()
-        pdf.cell(col_width, th, "Base Sx e Dx:")
-        pdf.ln()
-        pdf.cell(col_width, th, "Decongestione Sx:")
-        pdf.ln()
-        pdf.cell(col_width, th, "Decongestione Dx:")
-        pdf.ln()
-        pdf.cell(col_width, th, "Decongestione Sx e Dx")
-        pdf.ln()
+
+        if(self.anamnesis != None):
+            pdf.set_font('Times', 'B', 20.0)
+            pdf.cell(epw, 0.0, 'Anamnesi', align='C')
+            pdf.set_font('Times', '', 14.0)
+            pdf.ln(0.5)
+            pdf.cell(col_width, th, "Anamnesi familiare")
+            pdf.ln()
+
+            pdf.set_font('Times', '', 12.0)
+
+            pdf.multi_cell(col_width, th, "Allergia Genitori: " + Report.getYesOrNo(self.anamnesis.get_allergy_gen_display()))
+            pdf.cell(col_width, th, "Tipo Allergia Genitori: " + Report.ifNotNull(self.anamnesis.get_allergy_gen_display()))
+            pdf.ln()
+            pdf.multi_cell(col_width, th, "Allergia Fratelli: " + Report.getYesOrNo(self.anamnesis.get_allergy_fra_display()))
+            pdf.cell(col_width, th, "Tipo Allergia Fratelli: " + Report.ifNotNull(self.anamnesis.get_allergy_fra_display()))
+            pdf.ln()
+            pdf.cell(col_width, th, "Poliposi Genitori: " + Report.getBooleanValue(self.anamnesis.polip_nas_gen))
+            pdf.ln()
+            pdf.cell(col_width, th, "Asma Genitori: " + Report.getBooleanValue(self.anamnesis.asma_bronch_gen))
+            pdf.ln()
+            pdf.cell(col_width, th, "Asma Fratelli: " + Report.getBooleanValue(self.anamnesis.asma_bronch_fra))
+            pdf.ln()
+            pdf.cell(col_width, th, "Appunti Anamnesi Familiare:")
+            pdf.ln()
+            pdf.ln()
+
+            pdf.cell(col_width, th, "Patologica prossima - Sintomi")
+            pdf.ln()
+            pdf.cell(col_width, th, "Ostruzione: " + Report.ifNotNull(self.anamnesis.get_ostr_nas_display()))
+            pdf.ln()
+            pdf.cell(col_width, th, "Rinorrea: " + Report.ifNotNull(self.anamnesis.get_rinorrea_display()) + " " + Report.ifNotNull(self.anamnesis.get_rinorrea_espans_display()))
+            pdf.ln()
+            pdf.cell(col_width, th, "Prurito nasale: " + Report.getBooleanValue(self.anamnesis.prur_nas))
+            pdf.ln()
+            pdf.cell(col_width, th, "Starnutazione: " + Report.ifNotNull(self.anamnesis.get_starnutazione_display()))
+            pdf.ln()
+            pdf.cell(col_width, th, "Problemi olfattivi: " + Report.ifNotNull(self.anamnesis.get_prob_olf_display()))
+            pdf.ln()
+            pdf.cell(col_width, th, "Ovattamento auricolare: " + Report.ifNotNull(self.anamnesis.get_ovatt_aur_display()))
+            pdf.ln()
+            pdf.cell(col_width, th, "Ipoacusia: " + Report.ifNotNull(self.anamnesis.get_ipoacusia_display()))
+            pdf.ln()
+            pdf.cell(col_width, th, "Acufeni: " + Report.ifNotNull(self.anamnesis.get_acufeni_display()))
+            pdf.ln()
+            pdf.cell(col_width, th, "Sindrome vertiginosa: " + Report.ifNotNull(self.anamnesis.get_sindr_ver_display()))
+            pdf.ln()
+            pdf.cell(col_width, th, "Febbre: " + Report.getBooleanValue(self.anamnesis.febbre))
+            pdf.ln()
+            pdf.cell(col_width, th, "Uso farmaci: " + Report.getBooleanValue(self.anamnesis.uso_farmaci))
+            pdf.ln()
+            pdf.cell(col_width, th, "Lacrimazione: " + Report.getBooleanValue(self.anamnesis.lacrimazione))
+            pdf.ln()
+            pdf.cell(col_width, th, "Fotofobia: " + Report.getBooleanValue(self.anamnesis.fotofobia))
+            pdf.ln()
+            pdf.cell(col_width, th, "Prurito : " + Report.getBooleanValue(self.anamnesis.prurito_cong))
+            pdf.ln()
+            pdf.cell(col_width, th, "Bruciore: " + Report.getBooleanValue(self.anamnesis.bruciore_cong))
+            pdf.ln()
+            pdf.cell(col_width, th, "Appunti Anamnesi Patologica Prossima:")
+            pdf.ln()
+            pdf.ln()
+            pdf.cell(col_width, th, "Esame obbiettivo strumentale del naso")
+            pdf.ln()
+            pdf.cell(col_width, th, "Piramide nasale: " + Report.ifNotNull(self.anamnesis.get_pir_nas_display()))
+            pdf.ln()
+            pdf.cell(col_width, th, "Valvola nasale: " + Report.ifNotNull(self.anamnesis.get_valv_nas_display()))
+            pdf.ln()
+            pdf.ln()
+            pdf.cell(col_width, th, "Endoscopia nasale, Esame Rinomanometrico, Esame Otoscopico e Allergologico")
+            pdf.ln()
+            pdf.cell(col_width, th, "Setto nasale: " + Report.ifNotNull(self.anamnesis.get_setto_nas_display()))
+            pdf.ln()
+            pdf.cell(col_width, th, "Turbinati: " + Report.ifNotNull(self.anamnesis.get_turb_display()))
+            pdf.ln()
+            pdf.cell(col_width, th, "Poliposi lato sinistro: " + str(self.anamnesis.polip_nas_sx))
+            pdf.ln()
+            pdf.cell(col_width, th, "Poliposi lato destro: " + str(self.anamnesis.polip_nas_dx))
+            pdf.ln()
+            pdf.cell(col_width, th, "Essudato: " + Report.ifNotNull(self.anamnesis.get_essudato_display()))
+            pdf.ln()
+            pdf.cell(col_width, th, "Ipertrofia: " + str(self.anamnesis.ipertr_adenoidea))
+            pdf.ln()
+            pdf.cell(col_width, th, "Appunti Esame Rinomanometrico:")
+            pdf.ln()
+            pdf.cell(col_width, th, "Allergia/e: " + self.getAllergy())
+            pdf.ln()
+            pdf.cell(col_width, th, "Base Dx:")
+            pdf.ln()
+            pdf.cell(col_width, th, "Base Sx e Dx:")
+            pdf.ln()
+            pdf.cell(col_width, th, "Decongestione Sx:")
+            pdf.ln()
+            pdf.cell(col_width, th, "Decongestione Dx:")
+            pdf.ln()
+            pdf.cell(col_width, th, "Decongestione Sx e Dx")
+            pdf.ln()
 
         report_path = Report.getMediaPath()
-        report_filename = Report.generateFilename(self.anamnesis.id, self.cell_extraction.id)
+
+        if self.anamnesis != None and self.cell_extraction != None:
+            report_filename = Report.generateFilename(self.anamnesis.id, self.cell_extraction.id)
+        elif self.anamnesis == None:
+            report_filename = Report.generateFilename(0, self.cell_extraction.id)
+        elif self.cell_extraction == None:
+            report_filename = Report.generateFilename(self.anamnesis.id, 0)
+
 
         # create the report path if doesn't exists
         if not os.path.isdir(report_path):
