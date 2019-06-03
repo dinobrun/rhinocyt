@@ -425,6 +425,7 @@ class Anamnesis(ApiModel):
     polip_nas_fra = models.BooleanField(blank=True, default=False)
     asma_bronch_gen = models.BooleanField(blank=True, default=False)
     asma_bronch_fra = models.BooleanField(blank=True, default=False)
+    appunti_anam_fam = models.TextField(null=True, max_length=120)
 
     #Sintomatologia
     LEFT_RIGHT_TYPE = (
@@ -468,6 +469,7 @@ class Anamnesis(ApiModel):
     fotofobia = models.BooleanField(blank=True, default=False)
     prurito_cong = models.BooleanField(blank=True, default=False)
     bruciore_cong = models.BooleanField(blank=True, default=False)
+    appunti_sintom = models.TextField(null=True, max_length=120)
 
     #Esame del medico
     PIR_NAS_TYPE = (
@@ -495,6 +497,7 @@ class Anamnesis(ApiModel):
         ('EMA', 'ematosi')
     )
 
+    #Esame medico
     pir_nas = models.CharField(max_length=3, choices=PIR_NAS_TYPE, null=True)
     valv_nas = models.CharField(max_length=3, choices=VALV_NAS_TYPE, null=True)
     setto_nas = models.CharField(max_length=3, choices=SETTO_NAS_TYPE, null=True)
@@ -503,6 +506,9 @@ class Anamnesis(ApiModel):
     polip_nas_dx = models.IntegerField(choices=list(zip(range(1, 5), range(1, 5))), unique=True, null=True)
     essudato = models.CharField(max_length=2, choices=RINORREA_ESSUDATO_TYPE, null=True)
     ipertr_adenoidea = models.IntegerField(choices=list(zip(range(1, 5), range(1, 5))), unique=True, null=True)
+    appunti_alter_rinofaringe = models.TextField(null=True, max_length=120)
+    esame_orecchie = models.TextField(null=True, max_length=120)
+    conclusioni_esame = models.TextField(null=True, max_length=120)
 
     def save(self, *args, **kwargs):
         #saves and create diagnosis with the last available extraction

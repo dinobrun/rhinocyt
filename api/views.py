@@ -239,20 +239,18 @@ class ReportViewSet(ModelViewSet):
     def list(self, request, *args, **kwargs):
         anamnesis = request.query_params.get('anamnesis')
         cell_extraction = request.query_params.get('cell_extraction')
-        print(cell_extraction)
-        print(anamnesis)
 
-        if anamnesis == None:
+        if anamnesis == None and cell_extraction != None:
             cell_extraction = CellExtraction.objects.get(id=cell_extraction)
             queryset = self.get_queryset().filter(cell_extraction=cell_extraction)
             serializer = self.get_serializer(queryset, many=True)
             return Response(serializer.data)
-        elif cell_extraction == None:
+        elif cell_extraction == None and anamnesis != None:
             anamnesis = Anamnesis.objects.get(id=anamnesis)
             queryset = self.get_queryset().filter(anamnesis=anamnesis, cell_extraction=cell_extraction)
             serializer = self.get_serializer(queryset, many=True)
             return Response(serializer.data)
-        else:
+        elif cell_extraction != None and anamnesis != None:
             anamnesis = Anamnesis.objects.get(id=anamnesis)
             cell_extraction = CellExtraction.objects.get(id=cell_extraction)
             queryset = self.get_queryset().filter(anamnesis=anamnesis, cell_extraction=cell_extraction)
