@@ -969,8 +969,11 @@ class Report(ApiModel):
             pdf.set_font('Times', '', 14.0)
             pdf.ln(0.5)
 
-
-
+            #patient's name
+            pdf.cell(epw, 0.0, 'Nome: ' + self.anamnesis.patient.first_name, align='L')
+            pdf.ln(0.3)
+            #patient's last_name
+            pdf.cell(epw, 0.0, 'Cognome: ' + self.anamnesis.patient.last_name, align='L')
             # Line break equivalent to 4 lines
             pdf.ln(4 * th)
 
@@ -1050,6 +1053,7 @@ class Report(ApiModel):
             pdf.cell(col_width, th, "Bruciore: " + Report.getBooleanValue(self.anamnesis.bruciore_cong))
             pdf.ln()
             pdf.cell(col_width, th, "Appunti Anamnesi Patologica Prossima:")
+            pdf.ln()
             pdf.ln()
             pdf.ln()
             pdf.cell(col_width, th, "Esame obbiettivo strumentale del naso")
